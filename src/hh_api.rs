@@ -21,12 +21,12 @@ pub struct Vacancy {
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Snippet {
     pub requirement: Option<String>,
-    pub responsibility: Option<String>,
+    // pub responsibility: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Area {
-    pub id: Option<String>,
+    // pub id: Option<String>,
     pub name: Option<String>,
 }
 
@@ -35,26 +35,26 @@ pub struct SalaryRange {
     pub from: Option<i64>,
     pub to: Option<i64>,
     pub currency: Option<String>,
-    #[serde(rename = "gross")]
-    pub is_gross: Option<bool>,
+    // #[serde(rename = "gross")]
+    // pub is_gross: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Employer {
-    pub id: Option<String>,
+    // pub id: Option<String>,
     pub name: Option<String>,
-    #[serde(rename = "logo_urls")]
-    pub logo_urls: Option<LogoUrls>,
+    // #[serde(rename = "logo_urls")]
+    // pub logo_urls: Option<LogoUrls>,
 }
 
-#[derive(Debug, Deserialize, Clone, Default)]
-pub struct LogoUrls {
-    #[serde(rename = "90")]
-    pub small: Option<String>,
-    #[serde(rename = "240")]
-    pub medium: Option<String>,
-    pub original: Option<String>,
-}
+// #[derive(Debug, Deserialize, Clone, Default)]
+// pub struct LogoUrls {
+// #[serde(rename = "90")]
+// pub small: Option<String>,
+// #[serde(rename = "240")]
+// pub medium: Option<String>,
+// pub original: Option<String>,
+// }
 
 #[derive(Debug, Deserialize, Default)]
 pub struct VacanciesResponse {
@@ -63,6 +63,28 @@ pub struct VacanciesResponse {
     pub page: Option<u32>,
     pub pages: Option<u32>,
     pub per_page: Option<u32>,
+}
+
+fn format_published_time(published: &str) -> String {
+    if published.len() < 19 {
+        return published.to_string();
+    }
+    let (date_part, time_part) = published.split_at(10);
+    let time = &time_part[1..8];
+
+    let months = [
+        "", "янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек",
+    ];
+
+    let parts: Vec<&str> = date_part.split('-').collect();
+    if parts.len() >= 3 {
+        let day = parts[2];
+        let month: usize = parts[1].parse().unwrap_or(0);
+        let month_name = if month < 13 { months[month] } else { "" };
+        let year = parts[0];
+        return format!("{} {} {} {}", day, month_name, year, time);
+    }
+    published.to_string()
 }
 
 pub struct HhApi {
@@ -165,7 +187,10 @@ impl HhApi {
             println!("[HH_API]       area: {}", area);
             println!("[HH_API]       employer: {}", employer);
             println!("[HH_API]       salary: {}", salary);
-            println!("[HH_API]       published_at: {}", published);
+            println!(
+                "[HH_API]       published_at: {}",
+                format_published_time(&published)
+            );
             println!(
                 "[HH_API]       requirements: {}",
                 requirements.chars().take(100).collect::<String>()
@@ -223,6 +248,11 @@ pub fn format_vacancy(vacancy: &Vacancy) -> String {
 
     format!(
         "🎯 <b>{}</b>\n💼 {}\n📍 {}\n💰 {}\n🔗 {}\n🕐 {}",
-        name, employer, area, salary, url, published
+        name,
+        employer,
+        area,
+        salary,
+        url,
+        format_published_time(&published)
     )
 }

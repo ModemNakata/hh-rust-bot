@@ -40,9 +40,10 @@ async fn main() {
 
     // Start background scheduler (1 minute for debugging, change to 3600 for production)
     let debug_fetch_interval = std::env::var("FETCH_INTERVAL_SECS")
-        .unwrap_or_else(|_| "60".to_string())
+        .unwrap_or_else(|_| "3600".to_string())
         .parse::<u64>()
-        .unwrap_or(60 * 60); // 1 hour
+        .unwrap();
+    // .unwrap_or(60 * 60); // 1 hour
 
     println!("[MAIN] Fetch interval: {} seconds", debug_fetch_interval);
 

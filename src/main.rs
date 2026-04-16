@@ -42,7 +42,7 @@ async fn main() {
     let debug_fetch_interval = std::env::var("FETCH_INTERVAL_SECS")
         .unwrap_or_else(|_| "60".to_string())
         .parse::<u64>()
-        .unwrap_or(60);
+        .unwrap_or(60 * 60); // 1 hour
 
     println!("[MAIN] Fetch interval: {} seconds", debug_fetch_interval);
 

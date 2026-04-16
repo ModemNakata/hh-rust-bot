@@ -89,7 +89,7 @@ async fn handle_message(
             Err(e) => println!("[HANDLER] ✗ Failed to register chat: {}", e),
         }
 
-        let welcome_msg = "🤖 Вы подписаны на новые вакансии Rust!";
+        let welcome_msg = "🤖 <b>HH Rust Bot</b>\n\nВы подписаны на новые вакансии Rust!\n📝 Отправьте число (например, 5) чтобы получить N последних вакансий.";
         bot.send_message(msg.chat.id, welcome_msg)
             .parse_mode(teloxide::types::ParseMode::Html)
             .await?;
@@ -98,7 +98,73 @@ async fn handle_message(
         return Ok(());
     }
 
-    // For non-start messages, show a quick vacancy
+    // Check if message is a digit - fetch N vacancies
+    if let Ok(count) = text.trim().parse::<u32>() {
+        println!(
+            "[HANDLER] Received digit request for {} vacancies from chat_id: {}",
+            count, chat_id
+        );
+
+        let count = std::cmp::min(count, 50); // Cap at 50 to avoid API overload
+        println!(
+            "[HANDLER] Capped request to {} vacancies (max 50)",
+            count
+        );
+
+        match api.get_recent_vacancies(count).await {
+            Ok(vacs) => {
+                println!(
+                    "[HANDLER] ✓ Fetched {} vacancies for digit request from chat_id: {}",
+                    vacs.len(),
+                    chat_id
+                );
+
+                if vacs.is_empty() {
+                    println!("[HANDLER] No vacancies found");
+                    let no_vac_msg = "❌ К сожалению, вакансии не найдены.";
+                    bot.send_message(msg.chat.id, no_vac_msg).await?;
+                } else {
+                    println!(
+                        "[HANDLER] Sending {} vacancy(ies) to chat_id: {}",
+                        vacs.len(),
+                        chat_id
+                    );
+
+                    for (idx, vac) in vacs.iter().enumerate() {
+                        let formatted = format_vacancy(&vac);
+                        let vac_id = vac.id.clone().unwrap_or_else(|| "unknown".to_string());
+
+                        println!(
+                            "[HANDLER]   Sending vacancy {}/{}: id={}",
+                            idx + 1,
+                            vacs.len(),
+                            vac_id
+                        );
+
+                        bot.send_message(msg.chat.id, formatted)
+                            .parse_mode(teloxide::types::ParseMode::Html)
+                            .await?;
+
+                        println!("[HANDLER]   ✓ Vacancy {}/{} sent", idx + 1, vacs.len());
+                    }
+
+                    println!(
+                        "[HANDLER] ✓ All {} vacancies sent to chat_id: {}",
+                        vacs.len(),
+                        chat_id
+                    );
+                }
+            }
+            Err(e) => {
+                println!("[HANDLER] ✗ Failed to fetch vacancies: {}", e);
+                let error_msg = "❌ Ошибка при получении вакансий. Попробуйте позже.";
+                bot.send_message(msg.chat.id, error_msg).await?;
+            }
+        }
+        return Ok(());
+    }
+
+    // For non-digit, non-start messages, show a quick vacancy
     println!("[HANDLER] Fetching sample vacancy for chat_id: {}", chat_id);
     match api.get_recent_vacancies(1).await {
         Ok(vacs) => {
